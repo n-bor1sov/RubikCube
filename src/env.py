@@ -75,7 +75,7 @@ class Cube:
         corners (torch.Tensor): The current state of the corners.
         edges (torch.Tensor): The current state of the edges.
     """
-    def __init__(self):
+    def __init__(self, corners: torch.Tensor | None = None, edges: torch.Tensor | None = None):
         # Define the solved state for corners
         self.solved_corners = torch.zeros(8, dtype=torch.long)
         self.solved_corners[:4] = torch.arange(4)
@@ -89,8 +89,9 @@ class Cube:
         self.solved_edges[8:] = torch.arange(12, 16)
 
         # Clone the solved state into current state
-        self.corners = self.solved_corners.clone()
-        self.edges = self.solved_edges.clone()
+        
+        self.corners = self.solved_corners.clone() if corners is None else corners
+        self.edges = self.solved_edges.clone() if edges is None else edges
 
     def move(self, move_index: int):
         """
