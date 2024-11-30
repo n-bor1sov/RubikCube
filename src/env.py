@@ -119,7 +119,7 @@ class Cube:
         Returns:
             tuple: A tuple containing the corner and edge states as tensors.
         """
-        return self.corners, self.edges
+        return self.corners.clone(), self.edges.clone()
 
     def is_solved(self):
         """
