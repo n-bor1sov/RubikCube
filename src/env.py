@@ -1,3 +1,5 @@
+from typing import Union
+
 import torch
 
 # Mapping moves to their respective indices
@@ -75,7 +77,7 @@ class Cube:
         corners (torch.Tensor): The current state of the corners.
         edges (torch.Tensor): The current state of the edges.
     """
-    def __init__(self, corners: torch.Tensor | None = None, edges: torch.Tensor | None = None):
+    def __init__(self, corners: Union[torch.Tensor, None] = None, edges: Union[torch.Tensor, None] = None):
         # Define the solved state for corners
         self.solved_corners = torch.zeros(8, dtype=torch.long)
         self.solved_corners[:4] = torch.arange(4)
