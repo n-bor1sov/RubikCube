@@ -61,7 +61,7 @@ function App() {
   const generateScramble = async () => {
     const scramble = [];
     const scrambleIdx = [];
-    const scrambleLength = 2; // Number of moves in the scramble
+    const scrambleLength = 7; // Number of moves in the scramble
 
     for (let i = 0; i < scrambleLength; i++) {
       let rnd_idx = Math.floor(Math.random() * moves.length);
