@@ -54,9 +54,9 @@ def solve():
     print(solved, type(solved))
     print(solve_time, type(solve_time))
     print(iterations, type(iterations))
-    print(solution[::-1])
+    print(solution)
     # Prepare response
-    response = solution[::-1] if solved else None
+    response = solution if solved else None
     
     return jsonify(response)
     

@@ -89,39 +89,36 @@ def solve_cube(model, device, initial_state, max_exploration=50, action_set=None
         else:
             # Extend
             corners, edges = current_node.getState()
-            cube = Cube(torch.tensor(corners), torch.tensor(edges))
             for a in action_set:
+                cube = Cube(torch.tensor(corners.clone()), torch.tensor(edges.clone()))
                 cube.move(a)
                 next_state = cube.get_state()
                 solved = cube.is_solved()
                 new_node = tree.add(next_state, current_node, a)
                 if solved:
                     solution_node = new_node
-                    solver = new_node
                     break
-            
-            # Backpropagation
-            current_node.state = calculate_val(current_node.state, action_set, model, device)
+            if not solved:
+                # Backpropagation
+                current_node.state = calculate_val(current_node.state, action_set, model, device)
+                A = current_node.Q() + current_node.U()
+                a = action_set[np.argmax(A)]
+                current_node.state.loss_update(a)
 
-            A = current_node.Q() + current_node.U()
-            a = action_set[np.argmax(A)]
-            current_node.state.loss_update(a)
-            
-            # print(a, current_node.state.val)
-            current_node.update(a, current_node.state.val)
-            parent, a = current_node.get_parent()
-            while parent:
-                parent.update(a, current_node.state.val)
-                current_node = parent
+                # print(a, current_node.state.val)
+                current_node.update(a, current_node.state.val)
                 parent, a = current_node.get_parent()
-                
-            # Start over
-            current_node = tree.getRoot()
-            i += 1
+                while parent:
+                    parent.update(a, current_node.state.val)
+                    current_node = parent
+                    parent, a = current_node.get_parent()
+
+                # Start over
+                current_node = tree.getRoot()
+                i += 1
 
         if solved:
-
-            while not solution_node == tree.getRoot():
+            while solution_node.state is not tree.getRoot().state:
                 parent, a = solution_node.get_parent()
                 solution_actions.append(a)
                 solution_node = parent
