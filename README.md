@@ -17,12 +17,13 @@ This project implements a Rubik's Cube solver using deep reinforcement learning.
 - Flask API server for solving cubes via HTTP requests
 
 ## Usage
-
-pip install -r requirements.txt
-python api/api.py
-
-cd front/rubiks-cube
-
-npm install
-
-npm run dev
+  
+  pip install -r requirements.txt
+  
+  python api/api.py
+  
+  cd front/rubiks-cube
+  
+  npm install
+  
+  npm run dev
