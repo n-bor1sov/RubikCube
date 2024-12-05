@@ -115,7 +115,7 @@ def solve_cube(model, device, initial_state, max_exploration=50, action_set=None
                 current_node = parent
                 parent, a = current_node.get_parent()
                 
-            # New start
+            # Start over
             current_node = tree.getRoot()
             i += 1
 
@@ -130,14 +130,5 @@ def solve_cube(model, device, initial_state, max_exploration=50, action_set=None
             break
     
     solve_time = time.time() - t
-    # print_tree_levels(tree.getRoot())
-    # if solved:
-    #     solution = []
-    #     _, min_solver = tree.BFS(solver.state)
-    #     parent, a = min_solver.get_parent()
-    #     while parent:
-    #         solution = [a] + solution
-    #         parent, a = parent.get_parent()
-    #     return solution, solve_time, i
     
     return None, solve_time, i, solved, solution_actions

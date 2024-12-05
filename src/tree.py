@@ -42,20 +42,6 @@ class State(object):
 		self.N[action] += 1
 		self.L[action] -= mu
 		self.totalN += 1
-  
-	def getVal(self):
-		if self.val is None:
-			# Get predictions from model
-			cube_representation = torch.concat([self.corners, self.edges], dim=0)
-			cube_representation_encoded = F.one_hot(cube_representation, num_classes=24).float().to(device)
-			with torch.no_grad():
-				val, policy = model(cube_representation_encoded.unsqueeze(0))
-			
-			self.P = F.softmax(policy[0], dim=0).numpy()
-			self.val = val.item()
-			self.W = self.val * np.ones(n_a)
-			return self.val
-		
 
 	
 class StateNode(object):
@@ -142,15 +128,3 @@ class MCTS(object):
 			new_node = StateNode(self.visited_states[stateHash], action, parent)
 		parent.add_children(new_node, action)
 		return(new_node)
-	
-	def BFS(self,state):
-		stateHash = hash_state(state.state_id)
-		depths = {k : v.min_depth_node for k,v in self.visited_states.items()}
-		change = True
-		while change:
-			change = False
-			for k,node in depths.items():
-				if node and node.parent and node.parent.Depth()+1 < node.Depth():
-					node.state.depth = node.parent.Depth()+1
-					change = False
-		return(depths[stateHash].Depth(),depths[stateHash])
