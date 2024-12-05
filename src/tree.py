@@ -3,16 +3,14 @@ import sys
 sys.path.append("../")
 import numpy as np
 from src.env import *
-from queue import LifoQueue as Queue
+import math
 from src.model import hash_state
-
-
 import torch
 import torch.nn.functional as F
-device = torch.device("cpu")
 
-mu = 1000
-c = 40
+
+mu = 0.7
+c = math.sqrt(12)
 
 n_a = len(move2idx.keys())
 

@@ -1,8 +1,4 @@
 import numpy as np
-from treelib import Tree
-import sys
-
-sys.path.append("../")
 from src.tree import MCTS
 from src.env import *
 from src.model import ValuePolicyNetwork, hash_state
@@ -11,22 +7,8 @@ import torch
 import torch.nn.functional as F
 import time
 import random
-# from tqdm import tqdm
-# import seaborn as sns
-# import matplotlib.pyplot as plt
 
-device = torch.device("cpu")
-# Prepare model
-model = ValuePolicyNetwork()
-model.load_state_dict(torch.load("../models/model.pth", map_location=device , weights_only=False))
-model.to(device)
-model.eval()
-
-solve_time = []
-
-n_solves = []
-
-def calculateVal(state, action_set):
+def calculate_val(state, action_set, model, device):
     if state.val is None and state.P is None:
         # Get predictions from model
         cube_representation = torch.concat([state.corners, state.edges], dim=0)
@@ -72,11 +54,13 @@ def print_tree_levels(root_node, max_depth=3):
         current_level = next_level
         depth += 1
 
-def solve_cube(initial_state, max_exploration=50, action_set=None):
+def solve_cube(model, device, initial_state, max_exploration=50, action_set=None):
     """
     Attempts to solve a Rubik's cube from a given initial state using MCTS
     
     Args:
+        model: The nn model that defines the policy
+        device: torch.device()
         initial_state: The initial cube state (labels)
         max_exploration: Maximum number of exploration steps (default: 50)
         action_set: List of possible moves (if None, uses default moves)
@@ -92,8 +76,8 @@ def solve_cube(initial_state, max_exploration=50, action_set=None):
     i = 1
     
     tree = MCTS(initial_state)
-    solved, solved_state = False, None
-    
+    solved, solution_node = False, None
+    solution_actions = []
     current_node = tree.getRoot()
     while i < max_exploration:
         if not current_node.isLeaf():
@@ -112,11 +96,12 @@ def solve_cube(initial_state, max_exploration=50, action_set=None):
                 solved = cube.is_solved()
                 new_node = tree.add(next_state, current_node, a)
                 if solved:
+                    solution_node = new_node
                     solver = new_node
                     break
             
             # Backpropagation
-            current_node.state = calculateVal(current_node.state, action_set)
+            current_node.state = calculate_val(current_node.state, action_set, model, device)
 
             A = current_node.Q() + current_node.U()
             a = action_set[np.argmax(A)]
@@ -133,13 +118,19 @@ def solve_cube(initial_state, max_exploration=50, action_set=None):
             # New start
             current_node = tree.getRoot()
             i += 1
-        
+
         if solved:
+
+            while not solution_node == tree.getRoot():
+                parent, a = solution_node.get_parent()
+                solution_actions.append(a)
+                solution_node = parent
+            solution_actions.reverse()
+            print(f"Solution: {solution_actions}")
             break
     
     solve_time = time.time() - t
-    print(solved)
-    print_tree_levels(tree.getRoot())
+    # print_tree_levels(tree.getRoot())
     # if solved:
     #     solution = []
     #     _, min_solver = tree.BFS(solver.state)
@@ -149,53 +140,4 @@ def solve_cube(initial_state, max_exploration=50, action_set=None):
     #         parent, a = parent.get_parent()
     #     return solution, solve_time, i
     
-    return None, solve_time, i, solved
-
-# Test solving multiple scrambled cubes
-num_cubes = 10
-scramble_length = 4
-solved_count = 0
-
-total_time = 0
-total_iterations = 0
-
-print(f"\nTesting solver on {num_cubes} cubes scrambled with {scramble_length} moves each...")
-
-for cube_num in range(num_cubes):
-    cube = Cube()
-    scramble_moves = []
-    
-    # Scramble the cube
-    for _ in range(scramble_length):
-        move = random.randint(0, 11)
-        scramble_moves.append(move)
-        cube.move(move)
-        
-    print(f"\nCube {cube_num + 1}")
-    print(f"Scramble sequence: {scramble_moves}")
-    
-    corners, edges = cube.get_state()
-    solution, solve_time, iterations, solved = solve_cube(
-        initial_state=(corners, edges),
-        max_exploration=20000,
-        action_set=list(range(12))
-    )
-    
-    if solved:
-        solved_count += 1
-        
-    total_time += solve_time
-    total_iterations += iterations
-    
-    print(f"Solution found: {solved}")
-    print(f"Solve time: {solve_time:.2f}s")
-    print(f"Iterations: {iterations}")
-
-success_rate = (solved_count / num_cubes) * 100
-avg_time = total_time / num_cubes
-avg_iterations = total_iterations / num_cubes
-
-print(f"\nResults:")
-print(f"Success rate: {success_rate:.1f}%")
-print(f"Average solve time: {avg_time:.2f}s")
-print(f"Average iterations: {avg_iterations:.1f}")
+    return None, solve_time, i, solved, solution_actions
