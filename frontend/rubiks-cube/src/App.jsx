@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { GUI } from 'dat.gui';
 import * as THREE from 'three';
 import SceneInit from './lib/SceneInit';
@@ -6,7 +6,7 @@ import RubiksCube from './lib/RubiksCube';
 
 function App() {
   // Define the RubiksCube instance outside of useEffect
-  let r;
+  let r= useRef(null);
 
   // State to hold the list of moves
   const [scrambleMoves, setScrambleMoves] = useState([]);
@@ -20,29 +20,35 @@ function App() {
   // Define fetchMoves function here
   const fetchMoves = async () => {
     try {
-      const response = sendScrambleToAPI(scrambleMoves); // Replace with your API URL
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data_idx = await response.json();
+      const response = await sendScrambleToAPI(scrambleMoves); // Replace with your API URL
+      const data_idx = response;
+      console.log('Data_idx:', data_idx);
       console.log('API Response:', data_idx); // Log the response data
       const data = [];
+      console.log('Data_idx:', data_idx);
       for (const idx of data_idx) {
-        data.push(moves[idx]);
+        console.log(moves[idx]);
+        data.push(moves[idx][0]); 
+        data.push(moves[idx][1]);
       }
-      await executeMoves(data); // Assuming the response has a 'moves' array
+      // console.log('Moves:', data);
+      await executeMoves(data);
     } catch (error) {
       console.error('Error fetching moves:', error.message);
     }
+     // Assuming the response has a 'moves' array
+    
   };
 
   // Function to execute moves on the Rubik's Cube
   const executeMoves = async (moves) => {
+
     if (Array.isArray(moves)) {
       for (const move of moves) {
         // Highlight cells based on the move
-        r.highlightCells(move); // Now r is defined and accessible
-        r.onKeyDown(move);
+        console.log('Move:', move, r);
+        r.current.highlightCells(move); // Now r is defined and accessible
+        r.current.onKeyDown(move);
         // Optionally, you can wait for a short duration to see the highlight effect
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
@@ -55,7 +61,7 @@ function App() {
   const generateScramble = async () => {
     const scramble = [];
     const scrambleIdx = [];
-    const scrambleLength = 5; // Number of moves in the scramble
+    const scrambleLength = 2; // Number of moves in the scramble
 
     for (let i = 0; i < scrambleLength; i++) {
       let rnd_idx = Math.floor(Math.random() * moves.length);
@@ -100,8 +106,8 @@ function App() {
     test.initScene();
     test.animate();
 
-    r = new RubiksCube(); // Assign the RubiksCube instance to r
-    test.scene.add(r.rubiksCubeGroup);
+    r.current = new RubiksCube(); // Assign the RubiksCube instance to r
+    test.scene.add(r.current.rubiksCubeGroup);
 
     const mouse = new THREE.Vector2();
     const raycaster = new THREE.Raycaster();
@@ -110,12 +116,12 @@ function App() {
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event .clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, test.camera);
-      const objects = raycaster.intersectObjects(r.rubiksCubeGroup.children);
+      const objects = raycaster.intersectObjects(r.current.rubiksCubeGroup.children);
       const cubeObjects = objects.filter((c) => {
         return c.object.type === 'Mesh';
       });
       if (cubeObjects.length > 0) {
-        r.highlightCubes(cubeObjects[0].object);
+        r.current.highlightCubes(cubeObjects[0].object);
       }
     }
 
@@ -123,7 +129,7 @@ function App() {
       if (event.repeat) {
         return;
       }
-      r.onKeyDown(event);
+      r.current.onKeyDown(event);
     };
 
     window.addEventListener('keydown', onKeyDown);
@@ -131,8 +137,8 @@ function App() {
 
     const gui = new GUI();
     const folder = gui.addFolder("Rubik's Cube");
-    folder.add(r, 'epsilon', 0.5, 3.5, 0.5);
-    folder.add(r, 'consoleDebug');
+    folder.add(r.current, 'epsilon', 0.5, 3.5, 0.5);
+    folder.add(r.current, 'consoleDebug');
     folder.open();
 
     // You can call fetchMoves here if you want to fetch moves on component mount
