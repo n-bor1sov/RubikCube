@@ -1,5 +1,4 @@
 from typing import Union
-
 import torch
 
 # Mapping moves to their respective indices
@@ -181,3 +180,4 @@ class Cube:
             s += line
             s += "\n"
         return s
+    
